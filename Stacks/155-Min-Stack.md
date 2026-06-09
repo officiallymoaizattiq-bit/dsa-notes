@@ -1,10 +1,10 @@
 # 155-Min-Stack
 
-## Problem
+## 1. Problem
 
 Design a stack that supports:
 
-- push()
+- push(val)
 - pop()
 - top()
 - getMin()
@@ -13,198 +13,302 @@ All operations must run in O(1) time.
 
 ---
 
-## My Learning Journey
+## 2. My Learning Journey
 
-Initially attempted to compute the minimum by scanning the stack.
+I started by treating the problem as a "find the minimum" problem.
 
-Realized:
+My first instinct was to scan the stack inside getMin().
 
-- Scanning is O(n)
-- getMin() should not modify the stack
-- Storing a single minimum variable fails after popping the minimum
-- Need to preserve minimum history
+That led to multiple issues:
 
-Discovered the auxiliary min-stack pattern.
+1. The stack variable was not stored correctly.
+2. getMin() was destroying the stack while searching.
+3. A single minimum variable could not recover after pops.
+4. Duplicate minimum values broke the logic.
+5. Eventually I realized the problem is not finding the minimum—it is preserving minimum history.
 
----
-
-## Attempt 1
-
-Used `stack=[]` inside `__init__`.
-
-### Bugs Found
-
-- Implementation Bug
-- Scope Bug
+The major breakthrough was discovering the auxiliary min stack pattern.
 
 ---
 
-## Attempt 2
+## 3. Attempt 1
 
-Tried finding minimum by repeatedly popping values.
+### Idea
 
-### Bugs Found
+Store values in a stack and scan the stack when getMin() is called.
 
-- Destroyed stack contents
-- getMin() became destructive
-- Incorrect minimum updates
-- Infinite loop possibilities
+### Problems Found
 
-### Key Realization
+- Used `stack=[]` instead of `self.stack=[]`.
+- Methods could not access the same stack.
+- getMin() popped values while searching.
+- Minimum variable was never updated correctly.
+- Could enter infinite loops.
 
-Reading data and removing data are different operations.
+### Lesson
 
----
-
-## Attempt 3
-
-Stored a single minimum variable.
-
-### Problem
-
-After removing the minimum value:
-
-`push(5) -> push(2) -> pop()`
-
-Minimum incorrectly remained `2`.
-
-### Key Realization
-
-Need previous minimums.
+Object state must be stored using instance variables and getMin() should never destroy data.
 
 ---
 
-## Attempt 4
+## 4. Attempt 2
 
-Introduced a min stack.
+### Idea
 
-### Problem
+Fix stack access using `self.stack`.
 
-Used `<` instead of `<=`.
+### Problems Found
 
-### Failing Case
+- Called `self.pop(stack)`.
+- pop() returned None.
+- Compared None against numbers.
+- Popped multiple times while searching.
 
-`push(5) -> push(2) -> push(2) -> pop()`
+### Lesson
 
-Minimum incorrectly became `5`.
-
-### Key Realization
-
-Duplicate minimum values must be preserved.
+Understand exactly what functions return and how many times they are being called.
 
 ---
 
-## Accepted Solution(s)
+## 5. Additional Attempts
 
-### Solution 1: Auxiliary Min Stack
+### Attempt 3: Single Minimum Variable
+
+Idea:
+
+```python
+self.min
+```
+
+Store one minimum value.
+
+#### Failure Case
+
+```text
+push(5)
+push(2)
+pop()
+```
+
+Expected minimum:
+
+```text
+5
+```
+
+Stored minimum:
+
+```text
+2
+```
+
+#### Lesson
+
+One minimum variable loses previous minimum history.
+
+---
+
+### Attempt 4: Min Stack
+
+Created:
+
+```python
+self.min
+```
+
+to store minimum values.
+
+#### Failure Case
+
+```text
+push(5)
+push(2)
+push(2)
+pop()
+```
+
+Used:
+
+```python
+<
+```
+
+instead of:
+
+```python
+<=
+```
+
+#### Lesson
+
+Duplicate minimum values must be tracked.
+
+---
+
+## 6. Accepted Solution(s)
+
+### My Accepted Solution
 
 Maintain:
 
-- `self.stack`
-- `self.min`
+```python
+self.stack
+self.min
+```
 
-Whenever `val <= current_min`, push into min stack.
+Push into min stack whenever:
 
-Whenever `popped_value == current_min`, pop min stack.
+```python
+val <= current_min
+```
+
+Pop from min stack whenever:
+
+```python
+popped_value == current_min
+```
 
 ### NeetCode Solution
 
-Store a minimum value at every stack position.
+Stores a minimum value for every position.
 
 Example:
 
-Stack = [5,2,8,1]
-
+```text
+Stack    = [5,2,8,1]
 MinStack = [5,2,2,1]
+```
 
-Pop operations remove from both stacks.
-
----
-
-## Why It Works
-
-The min stack preserves minimum history.
-
-The top of the min stack always equals the minimum value currently present in the stack.
+Lengths always match.
 
 ---
 
-## Traversal Logic
+## 7. Why It Works
 
-### Push
+Invariant:
 
-Append value to stack.
+The top of the min stack is always the minimum value currently present in the main stack.
 
-### Pop
+Whenever a minimum enters the stack, it is recorded.
 
-Remove top value.
+Whenever that minimum leaves the stack, it is removed from the min stack.
 
-### Top
+---
 
-Read last value.
+## 8. Traversal Logic
 
-### GetMin
+### push()
+
+Append value to top of stack.
+
+### pop()
+
+Remove value from top of stack.
+
+### top()
+
+Read last element.
+
+### getMin()
 
 Read top of min stack.
 
 ---
 
-## Business Logic
+## 9. Business Logic
 
-### Push
+### push()
 
-Determine whether value should affect minimum tracking.
+Determine whether the new value affects minimum tracking.
 
-### Pop
+### pop()
 
-Determine whether removed value was the current minimum.
+Determine whether the removed value was the current minimum.
+
+### getMin()
+
+Return current minimum instantly.
 
 ---
 
-## Variable Roles
+## 10. Variable Roles
 
 ### self.stack
 
-Stores actual stack values.
+Stores actual stack contents.
+
+Example:
+
+```text
+[5,2,8]
+```
 
 ### self.min
 
 Stores minimum history.
 
+Example:
+
+```text
+[5,2]
+```
+
+Top represents current minimum.
+
 ---
 
-## Visual Walkthrough
+## 11. Visual Walkthrough
 
 Operations:
 
+```text
 push(5)
 push(2)
 push(8)
 push(1)
+```
 
 State:
 
-Stack = [5,2,8,1]
+| Main Stack | Min Stack |
+|------------|------------|
+| [5] | [5] |
+| [5,2] | [5,2] |
+| [5,2,8] | [5,2] |
+| [5,2,8,1] | [5,2,1] |
 
-Min = [5,2,1]
+After:
 
-After pop():
+```text
+pop()
+```
 
-Stack = [5,2,8]
+State:
 
-Min = [5,2]
+```text
+Main = [5,2,8]
+Min  = [5,2]
+```
 
-Current minimum = 2
+Current minimum:
+
+```text
+2
+```
 
 ---
 
-## Optimization Journey
+## 12. Optimization Journey
 
 ### Brute Force
 
-Scan stack for minimum.
+Scan stack during getMin().
 
-Time: O(n)
+Time:
+
+```text
+O(n)
+```
 
 ### Bottleneck
 
@@ -216,138 +320,190 @@ Minimum information can be stored during push.
 
 ### Optimization
 
-Maintain a second stack.
+Use an auxiliary stack.
 
 ### Final Approach
 
-Auxiliary min stack.
+Maintain minimum history in O(1).
 
 ---
 
-## Pattern Recognition
+## 13. Pattern Recognition
 
 ### Signals
 
 - Stack operations
-- Constant-time minimum retrieval
+- O(1) minimum retrieval
 - Repeated minimum queries
 
 ### Pattern
 
-Auxiliary Stack.
+Stack + Auxiliary Min Stack
 
 ---
 
-## Pattern Comparison
+## 14. Pattern Comparison
 
 ### Brute Force
 
-getMin = O(n)
+- getMin(): O(n)
 
-### Min Stack
+### My Solution
 
-getMin = O(1)
+- Stores only minimum values.
+- Slightly less memory usage.
 
----
+### NeetCode Solution
 
-## Common Mistakes
-
-- Forgetting self
-- Destroying stack during search
-- Using a hardcoded minimum
-- Not handling duplicate minimum values
-- Using `<` instead of `<=`
+- Stores minimum at every position.
+- Simpler pop logic.
 
 ---
 
-## Edge Cases
+## 15. Common Mistakes
 
-- Duplicate minimums
-- Increasing sequence
-- Decreasing sequence
-- Single element
+Mistakes that actually occurred:
 
----
-
-## Debugging Lessons
-
-- State must persist across methods.
-- O(1) requirements often require auxiliary data structures.
-- Always test duplicate values.
+- Forgetting self.
+- Destroying stack while searching.
+- Using a hardcoded minimum.
+- Using one minimum variable.
+- Not handling duplicate minimums.
+- Using `<` instead of `<=`.
 
 ---
 
-## NeetCode / Official Solution
+## 16. Edge Cases
 
-Uses a parallel min stack where each index stores the minimum up to that point.
+### Duplicate Minimums
+
+```text
+2,2
+```
+
+### Single Element
+
+```text
+[5]
+```
+
+### Increasing Sequence
+
+```text
+1,2,3,4
+```
+
+### Decreasing Sequence
+
+```text
+4,3,2,1
+```
 
 ---
 
-## Deep Understanding
+## 17. Debugging Lessons
 
-The problem is not about finding the minimum.
-
-The problem is about remembering minimum history efficiently.
-
----
-
-## Complexity Analysis
-
-- Push: O(1)
-- Pop: O(1)
-- Top: O(1)
-- GetMin: O(1)
-
-Space: O(n)
+- Trace state after every operation.
+- Test duplicate values.
+- Think about what happens after pop().
+- O(1) requirements usually require stored state.
 
 ---
 
-## Related Problems
+## 18. NeetCode / Official Solution
+
+NeetCode keeps both stacks the same length.
+
+For every index:
+
+```text
+minStack[i]
+```
+
+stores the minimum value seen up to that point.
+
+Tradeoff:
+
+- More memory
+- Simpler implementation
+
+---
+
+## 19. Deep Understanding
+
+This problem is not about computing a minimum.
+
+It is about preserving historical minimum information so that previous minimums can be recovered after pops.
+
+---
+
+## 20. Complexity Analysis
+
+| Operation | Time |
+|-----------|------|
+| push | O(1) |
+| pop | O(1) |
+| top | O(1) |
+| getMin | O(1) |
+
+Space:
+
+```text
+O(n)
+```
+
+---
+
+## 21. Related Problems
 
 - 20 Valid Parentheses
 - 739 Daily Temperatures
 - 84 Largest Rectangle in Histogram
+- Frequency Stack
 
 ---
 
-## Interview Explanation (30 Seconds)
+## 22. Interview Explanation (30 Seconds)
 
-Use two stacks. One stores values and the other stores minimum information. The top of the min stack always provides the current minimum in O(1).
-
----
-
-## Interview Explanation (2 Minutes)
-
-The brute-force approach scans the stack whenever getMin() is called, resulting in O(n). To achieve O(1), maintain an auxiliary stack that tracks minimum values and synchronize it during push and pop operations.
+Use two stacks. One stores values and the other stores minimum information. When a new minimum is pushed, record it in the min stack. When the current minimum is removed, remove it from the min stack too. The top of the min stack always gives the minimum value in O(1).
 
 ---
 
-## Common Follow-Up Questions
+## 23. Interview Explanation (2 Minutes)
+
+A brute-force solution scans the stack whenever getMin() is called, resulting in O(n) time. To achieve O(1), maintain an auxiliary stack that tracks minimum values. During push, update minimum history. During pop, synchronize the min stack whenever the current minimum is removed. This preserves constant-time access to the current minimum while correctly handling duplicate minimum values.
+
+---
+
+## 24. Common Follow-Up Questions
 
 1. Why not use one minimum variable?
 2. How are duplicate minimums handled?
-3. Why is getMin O(1)?
+3. Why is getMin() O(1)?
 4. Why does the min stack work after pops?
+5. What tradeoff does the NeetCode solution make?
 
 ---
 
-## Key Takeaways
+## 25. Key Takeaways
 
-- O(1) retrieval usually requires stored state.
-- Auxiliary stacks are a common interview pattern.
-- Duplicate handling is critical.
+- O(1) queries often require extra storage.
+- Preserve history when information may be needed later.
+- Always test duplicate values.
+- Stack problems often rely on auxiliary stacks.
 
 ---
 
-## Revision Notes
+## 26. Revision Notes
 
-- Stack + Min Stack
+- Pattern: Stack + Min Stack
+- getMin must be O(1)
 - Preserve minimum history
-- Duplicate minimums require <=
-- getMin should never scan
+- Use <= for duplicate minimums
+- Top of min stack = current minimum
 
 ---
 
-## Final Mental Model
+## 27. Final Mental Model
 
-Think of the min stack as a historical record of minimum values. Whenever the current minimum disappears, the previous minimum is immediately available at the top of the min stack.
+Think of the min stack as a backup history of minimum values. Whenever a new minimum appears, record it. Whenever that minimum disappears, remove it. The top of the min stack always tells you the current minimum without searching.
