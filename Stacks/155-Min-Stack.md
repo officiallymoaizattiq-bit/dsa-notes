@@ -1,218 +1,362 @@
 # 155-Min-Stack
 
 ## Problem
+
 Design a stack supporting:
 
-- push
-- pop
-- top
-- getMin
+- push()
+- pop()
+- top()
+- getMin()
 
-All in O(1).
+All operations must run in O(1).
 
 ---
 
 ## Pattern Recognition
 
-### Signals
+### Recognition Signals
 
-- Stack operations
-- O(1) retrieval requirement
-- Current minimum needed repeatedly
+- Stack operations are explicitly required.
+- Minimum value queried repeatedly.
+- O(1) retrieval requirement.
+- Cannot rescan stack every time.
 
 ### Pattern
 
-Stack + Auxiliary Stack
+Stack + Auxiliary Min Stack
 
 ---
 
 ## Solutions
 
-### Solution 1: Brute Force (Passes but not optimal)
+### Solution 1 — Brute Force (Passes Functional Tests, Not Optimal)
 
-Code:
-<full code>
+```python
+class MinStack:
+    def __init__(self):
+        self.stack = []
 
-Time:
-- push O(1)
-- pop O(1)
-- top O(1)
-- getMin O(n)
+    def push(self, val: int) -> None:
+        self.stack.append(val)
 
-Space:
-- O(n)
+    def pop(self) -> None:
+        self.stack.pop()
 
-Why It Works:
-Scan entire stack whenever getMin is called.
+    def top(self) -> int:
+        return self.stack[-1]
 
-Why It's Bad:
-Repeated scans.
+    def getMin(self) -> int:
+        return min(self.stack)
+```
+
+#### Complexity
+
+| Operation | Time |
+|-----------|------|
+| push | O(1) |
+| pop | O(1) |
+| top | O(1) |
+| getMin | O(n) |
+
+Space: O(n)
+
+#### Why It Works
+
+Scans the stack whenever getMin() is called.
+
+#### Why It's Not Optimal
+
+Violates the O(1) getMin requirement.
 
 ---
 
-### Solution 2: Single Minimum Variable
+### Solution 2 — Single Minimum Variable
 
-Code:
-<full code>
+```python
+class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.min = float("inf")
 
-Status:
+    def push(self, val):
+        self.stack.append(val)
+        self.min = min(self.min, val)
+
+    def pop(self):
+        self.stack.pop()
+
+    def top(self):
+        return self.stack[-1]
+
+    def getMin(self):
+        return self.min
+```
+
+#### Status
+
 Incorrect
 
-Failure:
-Cannot recover previous minimum after pop.
+#### Failure Case
 
-Example:
-
+```text
 push(5)
 push(2)
 pop()
 
-Expected:
-5
+Expected: 5
+Actual: 2
+```
 
-Got:
-2
+#### Why It Fails
 
----
-
-### Solution 3: Accepted Solution (Mine)
-
-Code:
-<full accepted code>
-
-Time:
-O(1) all operations
-
-Space:
-O(n)
-
-Core Idea:
-Min stack stores minimum history.
+Loses previous minimum history.
 
 ---
 
-### Solution 4: NeetCode Solution
+### Solution 3 — My Accepted Solution
 
-Code:
-<full NeetCode code>
+```python
+class MinStack:
 
-Time:
-O(1)
+    def __init__(self):
+        self.stack=[]
+        self.min=[]
 
-Space:
-O(n)
+    def push(self, val: int) -> None:
+        self.stack.append(val)
 
-Core Idea:
-Store minimum at every index.
+        if self.min:
+            if val <= self.min[-1]:
+                self.min.append(val)
+        else:
+            self.min.append(val)
 
-Tradeoff:
-More memory, simpler logic.
+    def pop(self) -> None:
+        if self.stack:
+            if self.stack.pop() == self.min[-1]:
+                self.min.pop()
+
+    def top(self) -> int:
+        return self.stack[-1]
+
+    def getMin(self) -> int:
+        return self.min[-1]
+```
+
+#### Core Idea
+
+Store minimum history in a second stack.
+
+#### Complexity
+
+| Operation | Time |
+|-----------|------|
+| push | O(1) |
+| pop | O(1) |
+| top | O(1) |
+| getMin | O(1) |
+
+Space: O(n)
+
+---
+
+### Solution 4 — NeetCode Solution
+
+```python
+class MinStack:
+
+    def __init__(self):
+        self.stack = []
+        self.minStack = []
+
+    def push(self, val: int) -> None:
+        self.stack.append(val)
+
+        val = min(val, self.minStack[-1] if self.minStack else val)
+        self.minStack.append(val)
+
+    def pop(self) -> None:
+        self.stack.pop()
+        self.minStack.pop()
+
+    def top(self) -> int:
+        return self.stack[-1]
+
+    def getMin(self) -> int:
+        return self.minStack[-1]
+```
+
+#### Core Idea
+
+Store the minimum value at every stack index.
+
+#### Tradeoff
+
+Uses slightly more memory but simplifies logic.
 
 ---
 
 ## Traversal Logic
 
-push:
-Append to stack.
+### push()
 
-pop:
-Remove top.
+Append value to stack.
 
-getMin:
+### pop()
+
+Remove top value.
+
+### top()
+
+Read top value.
+
+### getMin()
+
 Read top of min stack.
 
 ---
 
 ## Business Logic
 
-push:
-If val <= current minimum:
-    update min tracking
+### My Solution
 
-pop:
-If removed value equals current minimum:
-    remove from min stack
+Push:
+
+```text
+If val <= current minimum
+store in min stack
+```
+
+Pop:
+
+```text
+If popped value == current minimum
+remove from min stack
+```
 
 ---
 
 ## Variable Roles
 
-self.stack
-- Actual values
+### self.stack
 
-self.min
-- Minimum history
+Stores actual stack contents.
+
+Example:
+
+```text
+[5,2,8,1]
+```
+
+### self.min
+
+Stores minimum history.
+
+Example:
+
+```text
+[5,2,1]
+```
+
+Top element is current minimum.
 
 ---
 
 ## Visual Trace
 
+```text
 push(5)
 
-stack=[5]
-min=[5]
+stack = [5]
+min   = [5]
+```
 
+```text
 push(2)
 
-stack=[5,2]
-min=[5,2]
+stack = [5,2]
+min   = [5,2]
+```
 
+```text
 push(8)
 
-stack=[5,2,8]
-min=[5,2]
+stack = [5,2,8]
+min   = [5,2]
+```
 
+```text
 push(1)
 
-stack=[5,2,8,1]
-min=[5,2,1]
+stack = [5,2,8,1]
+min   = [5,2,1]
+```
 
 ---
 
 ## Edge Cases
 
-Duplicate minimums
+### Duplicate Minimums
 
+```text
 push(2)
 push(2)
 pop()
+```
 
-Minimum remains 2
+Minimum remains 2.
 
-Single element
+### Single Element
 
-Increasing sequence
+```text
+push(5)
+pop()
+```
 
-Decreasing sequence
+### Increasing Sequence
 
----
+```text
+1,2,3,4
+```
 
-## Common Bugs I Made
+### Decreasing Sequence
 
-1. Forgot self.stack
-2. Destroyed stack during getMin
-3. Used hardcoded minimum
-4. Used single min variable
-5. Used < instead of <=
-
----
-
-## Interview Explanation (30s)
-
-Use two stacks. One stores values and the other stores minimum history. Whenever a new minimum appears, store it in the min stack. When the current minimum is removed, pop it from the min stack. The top of the min stack always provides the minimum value in O(1).
+```text
+4,3,2,1
+```
 
 ---
 
-## Complexity
+## Bugs I Actually Made
 
-Accepted Solution
+1. Used `stack` instead of `self.stack`.
+2. Destroyed stack while searching for minimum.
+3. Used hardcoded minimum value.
+4. Used a single minimum variable.
+5. Used `<` instead of `<=`.
+6. Didn't handle duplicate minimums.
 
-Push: O(1)
-Pop: O(1)
-Top: O(1)
-GetMin: O(1)
+---
 
-Space: O(n)
+## Interview Explanation (30 Seconds)
+
+Use two stacks. The main stack stores values, and the min stack stores minimum history. Whenever a new minimum appears, push it into the min stack. When the current minimum is removed, pop it from the min stack as well. This allows getMin() to return the minimum in O(1) time.
+
+---
+
+## Complexity Summary
+
+### Accepted Solution
+
+```text
+Push   : O(1)
+Pop    : O(1)
+Top    : O(1)
+GetMin : O(1)
+
+Space  : O(n)
+```
 
 ---
 
@@ -220,4 +364,4 @@ Space: O(n)
 
 The min stack is a history of minimum values.
 
-When a minimum disappears, the previous minimum is already waiting underneath.
+Whenever a minimum disappears, the previous minimum is already waiting underneath.
